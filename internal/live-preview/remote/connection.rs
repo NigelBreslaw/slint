@@ -1208,15 +1208,16 @@ mod session_tests {
         events: UnboundedReceiver<ConnectionMessage>,
     }
 
-    /// A viewer whose preview session runs on a thread of its own, as the real remote
-    /// viewer does. `compile` asks the worker for a build, `compiled` answers.
-    struct ThreadedViewer {
+    /// A preview session running on a thread of its own, as the real remote viewer
+    /// runs it, with the viewer it serves. `compile` asks the worker for a build,
+    /// `compiled` answers.
+    struct ThreadedPreviewSession {
         viewer: Viewer,
         compile: UnboundedSender<PreviewComponent>,
         compiled: UnboundedReceiver<PreviewCompilation>,
     }
 
-    impl ThreadedViewer {
+    impl ThreadedPreviewSession {
         async fn start(policy: PairingPolicy) -> Self {
             let (viewer, session_commands) = Viewer::start_detached(policy).await;
             let connection = &viewer.connection;
@@ -1490,8 +1491,8 @@ mod session_tests {
     /// result crosses back to the thread that instantiates.
     #[tokio::test]
     async fn a_session_on_another_thread_compiles_and_sends_the_result_back() {
-        let mut threaded = ThreadedViewer::start(PairingPolicy::Disabled).await;
-        let mut client = threaded.viewer.dial().await;
+        let mut session = ThreadedPreviewSession::start(PairingPolicy::Disabled).await;
+        let mut client = session.viewer.dial().await;
         hello(&mut client, None).await;
 
         let url = lsp_types::Url::from_file_path(
@@ -1506,9 +1507,9 @@ mod session_tests {
             },
         )
         .await;
-        threaded.compile.send(PreviewComponent { url, component: None }).unwrap();
+        session.compile.send(PreviewComponent { url, component: None }).unwrap();
 
-        let compilation = tokio::time::timeout(REPLY_TIMEOUT, threaded.compiled.recv())
+        let compilation = tokio::time::timeout(REPLY_TIMEOUT, session.compiled.recv())
             .await
             .expect("the worker never answered")
             .expect("the worker hung up");
