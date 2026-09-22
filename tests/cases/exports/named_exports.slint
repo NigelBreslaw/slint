@@ -15,6 +15,27 @@ export { TestCase as NamedTestCase }
 
 /*
 
+```d.ts
+export enum NamedEnum {
+    Hello = "Hello",
+    Bonjour = "Bonjour",
+}
+
+export interface NotExportedStruct0 {
+    a: number;
+}
+
+export interface NamedStruct {
+    d: number;
+    e: NotExportedStruct0;
+}
+
+export interface NamedTestCase {
+    en: NamedEnum;
+    st: NamedStruct;
+}
+```
+
 ```cpp
 auto handle = NamedTestCase::create();
 const NamedTestCase &instance = *handle;

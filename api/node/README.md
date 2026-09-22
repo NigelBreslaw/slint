@@ -72,9 +72,9 @@ For a full example, see [/examples/todo/node](https://github.com/slint-ui/slint/
 
 ## API Overview
 
-### Instantiating a Component
+### Loading `.slint` Files
 
-The following example shows how to instantiate a Slint component from JavaScript.
+The examples in this section use the following component:
 
 **`ui/main.slint`**
 
@@ -96,12 +96,33 @@ an object which allow to initialize the value of public properties or callbacks.
 dash in `.slint` can be given either as declared (`"my-property"`) or with underscores (`my_property`),
 which is how it is exposed on the instance.
 
-**`main.js`**
+#### `import` with the Loader Hook (Recommended)
+
+Import `.slint` files directly using the Slint loader hook.
+Register it with `--import slint-ui/register`:
+
+```sh
+node --import slint-ui/register app.mjs
+```
 
 ```js
 import * as slint from "slint-ui";
-// In this example, the main.slint file exports a module which
-// has a counter property and a clicked callback
+import { MainWindow } from "./ui/main.slint";
+
+let component = new MainWindow({
+    counter: 42,
+    clicked: function() { console.log("hello"); }
+});
+```
+
+#### `loadFile()`
+
+Alternatively, call `loadFile()` at runtime.
+Use this for dynamic loading or to pass compiler options like `style` or `includePaths`:
+
+```js
+import * as slint from "slint-ui";
+
 let ui = slint.loadFile(new URL("ui/main.slint", import.meta.url));
 let component = new ui.MainWindow({
     counter: 42,
