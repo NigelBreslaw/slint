@@ -1209,8 +1209,7 @@ mod session_tests {
     }
 
     /// A preview session running on a thread of its own, as the real remote viewer
-    /// runs it, with the viewer it serves. `compile` asks the worker for a build,
-    /// `compiled` answers.
+    /// does. `compile` asks the worker for a build, `compiled` answers.
     struct ThreadedPreviewSession {
         viewer: Viewer,
         compile: UnboundedSender<PreviewComponent>,
