@@ -1,0 +1,54 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
+
+// Wheel scrolling installs an animation binding on `content-y`, and the scroll must still
+// reach the global that `content-y` is two-way bound to, and run its `changed` handler.
+
+export global Adapter {
+    in-out property <length> scroll-position;
+    out property <int> change-count;
+    changed scroll-position => {
+        change-count += 1;
+    }
+}
+
+export component TestCase inherits Window {
+    width: 100phx;
+    height: 100phx;
+
+    Flickable {
+        content-height: 1000phx;
+        content-y <=> Adapter.scroll-position;
+    }
+
+    out property <length> scroll-position: Adapter.scroll-position;
+    out property <int> change-count: Adapter.change-count;
+}
+
+/*
+```rust
+use slint::{LogicalPosition, platform::WindowEvent};
+let instance = TestCase::new().unwrap();
+instance.window().dispatch_event(WindowEvent::PointerScrolled { position: LogicalPosition::new(50.0, 50.0), delta_x: 0.0, delta_y: -50.0 });
+slint_testing::mock_elapsed_time(1000);
+assert_eq!(instance.get_scroll_position(), -50.);
+assert_eq!(instance.get_change_count(), 1);
+```
+
+```cpp
+auto handle = TestCase::create();
+const TestCase &instance = *handle;
+instance.window().dispatch_pointer_scroll_event(slint::LogicalPosition({50.0, 50.0}), 0, -50);
+slint_testing::mock_elapsed_time(1000);
+assert_eq(instance.get_scroll_position(), -50.);
+assert_eq(instance.get_change_count(), 1);
+```
+
+```js
+var instance = new slint.TestCase({});
+instance.window.dispatchEvent({ type: "pointer-scrolled", position: { x: 50, y: 50 }, deltaX: 0, deltaY: -50 });
+slintlib.private_api.mock_elapsed_time(1000);
+assert.equal(instance.scroll_position, -50);
+assert.equal(instance.change_count, 1);
+```
+*/
