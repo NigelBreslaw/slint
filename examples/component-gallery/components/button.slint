@@ -14,8 +14,6 @@ export component GalleryButton inherits Button {
 
     min-width: 80px;
     min-height: root.size == small ? 32px : root.size == large ? 48px : 40px;
-    horizontal-stretch: 0;
-    vertical-stretch: 0;
     border-radius: root.corner-radius;
     border-width: root.has-focus ? 2px : 1px;
     border-color: root.has-focus ? #93c5fd : root.variant == primary ? root.accent : #cbd5e1;
