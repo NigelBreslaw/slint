@@ -15,6 +15,7 @@ export component RadioButton inherits Rectangle {
     out property <bool> pressed: pressable.pressed;
 
     callback selected;
+    callback focus-change <=> pressable.focus-change;
 
     min-width: pressable.min-width;
     min-height: pressable.min-height;

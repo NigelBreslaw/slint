@@ -3,7 +3,7 @@
 
 import { Pressable } from "../primitives/pressable.slint";
 
-export component Toggle inherits Rectangle {
+export component Switch inherits Rectangle {
     in property <string> text;
     in property <bool> enabled: true;
     in-out property <bool> checked: false;
@@ -18,7 +18,7 @@ export component Toggle inherits Rectangle {
     min-height: pressable.min-height;
     forward-focus: pressable;
 
-    accessible-role: button;
+    accessible-role: switch;
     accessible-label: root.text;
     accessible-enabled: root.enabled;
     accessible-checkable: true;

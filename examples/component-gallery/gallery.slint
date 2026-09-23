@@ -3,7 +3,7 @@
 
 import { Button, CheckBox, ComboBox, LineEdit, Slider } from "std-widgets.slint";
 import { GalleryButton, ButtonVariant, ButtonSize } from "components/button.slint";
-import { GalleryCheckBox, GalleryRadioGroup, GalleryToggle } from "components/selection-controls.slint";
+import { GalleryCheckBox, GalleryRadioGroup, GallerySwitch } from "components/selection-controls.slint";
 import { GallerySlider } from "components/slider.slint";
 
 export component ComponentGallery inherits Window {
@@ -109,7 +109,7 @@ export component ComponentGallery inherits Window {
                             text: "Show guides";
                             checked <=> root.checkbox-checked;
                         }
-                        GalleryToggle {
+                        GallerySwitch {
                             text: "Live updates";
                             checked <=> root.toggle-checked;
                         }

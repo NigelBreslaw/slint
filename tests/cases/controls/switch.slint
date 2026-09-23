@@ -1,19 +1,19 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
 
-import { Toggle } from "@controls";
+import { Switch } from "@controls";
 
-component StyledToggle inherits Toggle {
+component StyledSwitch inherits Switch {
     Rectangle {
         background: root.checked ? green : gray;
     }
 }
 
-component ComposedToggle inherits Rectangle {
+component ComposedSwitch inherits Rectangle {
     in-out property <bool> checked <=> behavior.checked;
     callback toggled <=> behavior.toggled;
 
-    behavior := Toggle {
+    behavior := Switch {
         Rectangle { background: root.checked ? blue : gray; }
     }
 }
@@ -26,15 +26,15 @@ export component TestCase inherits Window {
     public function focus-toggle() { styled.focus(); }
 
     HorizontalLayout {
-        styled := StyledToggle {
-            text: "Bold";
+        styled := StyledSwitch {
+            text: "Live updates";
             enabled: root.enabled;
             width: 80px;
             height: 40px;
             toggled => { root.toggle-count += 1; }
         }
 
-        ComposedToggle { width: 80px; height: 40px; }
+        ComposedSwitch { width: 80px; height: 40px; }
     }
 }
 
@@ -46,8 +46,8 @@ let instance = TestCase::new().unwrap();
 let toggle = slint_testing::ElementHandle::find_by_element_id(&instance, "TestCase::styled")
     .next().unwrap();
 
-assert_eq!(toggle.accessible_role(), Some(slint_testing::AccessibleRole::Button));
-assert_eq!(toggle.accessible_label(), Some(SharedString::from("Bold")));
+assert_eq!(toggle.accessible_role(), Some(slint_testing::AccessibleRole::Switch));
+assert_eq!(toggle.accessible_label(), Some(SharedString::from("Live updates")));
 assert_eq!(toggle.accessible_checkable(), Some(true));
 assert_eq!(toggle.accessible_checked(), Some(false));
 

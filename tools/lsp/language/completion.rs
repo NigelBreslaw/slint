@@ -2264,7 +2264,7 @@ mod tests {
         assert!(res.iter().any(|ci| ci.label == "@controls"));
 
         let res = get_completions(r#"import {🔺} from "@controls";"#).unwrap();
-        for control in ["Button", "CheckBox", "RadioButton", "RadioGroup", "Slider", "Toggle"] {
+        for control in ["Button", "CheckBox", "RadioButton", "RadioGroup", "Slider", "Switch"] {
             assert!(res.iter().any(|ci| ci.label == control), "Missing {control}");
         }
         assert!(!res.iter().any(|ci| ci.label == "Pressable"));

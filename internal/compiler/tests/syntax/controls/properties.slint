@@ -1,7 +1,7 @@
 // Copyright © SixtyFPS GmbH <info@slint.dev>
 // SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
 
-import { Button, CheckBox, RadioButton, Slider, Toggle } from "@controls";
+import { Button, CheckBox, RadioButton, Slider, Switch } from "@controls";
 
 export component StyledButton inherits Button {
     background: root.pressed ? blue : root.has-hover ? green : gray;
@@ -26,7 +26,7 @@ export component Test inherits Window {
         text: "Public input";
     }
     CheckBox { checked: true; }
-    Toggle { checked: true; }
+    Switch { checked: true; }
     RadioButton { checked: true; }
     slider := Slider {
         value: 50;
