@@ -12,6 +12,8 @@ export component TestCase inherits Window {
     out property <int> second-clicks;
     out property <bool> first-focused: first.has-focus;
     out property <bool> first-pressed: first.pressed;
+    out property <length> first-pressed-x: first.pressed-x;
+    out property <length> first-pressed-y: first.pressed-y;
 
     public function focus-first() { first.focus(); }
     public function focus-second() { second.focus(); }
@@ -160,5 +162,43 @@ fn reenabling_before_space_release_does_not_restore_press() {
 }
 
 reenabling_before_space_release_does_not_restore_press();
+```
+```rust
+fn press_coordinates_follow_pointer_and_center_held_space() {
+    use slint::{LogicalPosition, platform::{Key, PointerEventButton, WindowEvent}};
+
+    let instance = TestCase::new().unwrap();
+    let position = LogicalPosition::new(30.0, 10.0);
+    instance.window().dispatch_event(WindowEvent::PointerMoved { position });
+    instance.window().dispatch_event(WindowEvent::PointerPressed {
+        position, button: PointerEventButton::Left,
+    });
+    assert!(instance.get_first_pressed());
+    assert_eq!(instance.get_first_pressed_x(), 30.0);
+    assert_eq!(instance.get_first_pressed_y(), 10.0);
+    instance.window().dispatch_event(WindowEvent::PointerReleased {
+        position, button: PointerEventButton::Left,
+    });
+
+    instance.invoke_focus_first();
+    instance.window().dispatch_event(WindowEvent::KeyPressed { text: Key::Space.into() });
+    assert!(instance.get_first_pressed());
+    assert_eq!(instance.get_first_pressed_x(), 100.0);
+    assert_eq!(instance.get_first_pressed_y(), 20.0);
+    instance.window().dispatch_event(WindowEvent::KeyReleased { text: Key::Space.into() });
+    assert!(!instance.get_first_pressed());
+
+    let position = LogicalPosition::new(70.0, 15.0);
+    instance.window().dispatch_event(WindowEvent::PointerPressed {
+        position, button: PointerEventButton::Left,
+    });
+    assert_eq!(instance.get_first_pressed_x(), 70.0);
+    assert_eq!(instance.get_first_pressed_y(), 15.0);
+    instance.window().dispatch_event(WindowEvent::PointerReleased {
+        position, button: PointerEventButton::Left,
+    });
+}
+
+press_coordinates_follow_pointer_and_center_held_space();
 ```
 */

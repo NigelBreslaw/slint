@@ -32,6 +32,10 @@ export component TestCase inherits Window {
     out property <bool> inherited-focused: inherited.has-focus;
 
     out property <bool> inherited-pressed: inherited.pressed;
+    in-out property <bool> checkable <=> inherited.checkable;
+    out property <bool> checked: inherited.checked;
+    out property <bool> checked-at-click;
+    public function activate-inherited() { inherited.activate(); }
 
     public function focus-inherited() { inherited.focus(); }
 
@@ -40,7 +44,10 @@ export component TestCase inherits Window {
             text: "Inherited";
             enabled: root.first-enabled;
             height: 40px;
-            clicked => { root.inherited-clicks += 1; }
+            clicked => {
+                root.checked-at-click = self.checked;
+                root.inherited-clicks += 1;
+            }
         }
 
         composed := ComposedButton {
@@ -104,5 +111,33 @@ fn accessibility_activation_respects_enabled() {
 }
 
 accessibility_activation_respects_enabled();
+```
+*/
+
+/*
+```rust
+fn checkable_activation_updates_state_before_the_inherited_callback() {
+    let instance = TestCase::new().unwrap();
+    instance.set_checkable(true);
+    instance.invoke_activate_inherited();
+    assert!(instance.get_checked());
+    assert!(instance.get_checked_at_click());
+    assert_eq!(instance.get_inherited_clicks(), 1);
+
+    instance.invoke_activate_inherited();
+    assert!(!instance.get_checked());
+    assert!(!instance.get_checked_at_click());
+    instance.set_first_enabled(false);
+    instance.invoke_activate_inherited();
+    assert_eq!(instance.get_inherited_clicks(), 2);
+
+    instance.set_first_enabled(true);
+    instance.set_checkable(false);
+    instance.invoke_activate_inherited();
+    assert!(!instance.get_checked());
+    assert_eq!(instance.get_inherited_clicks(), 3);
+}
+
+checkable_activation_updates_state_before_the_inherited_callback();
 ```
 */
