@@ -10,6 +10,8 @@ export component RadioGroupBase {
 
     callback selected(string);
 
+    public function update-value(label: string) { root.current-value = label; }
+
     public function select(index: int, label: string) {
         if root.enabled && index != root.current-index {
             root.current-index = index;
@@ -42,6 +44,7 @@ export component RadioButtonImplBase {
 
     callback toggled;
     callback group-select;
+    callback group-update-value;
     callback focus-change(bool);
 
     out property <bool> has-focus <=> base.has-focus;
@@ -51,13 +54,19 @@ export component RadioButtonImplBase {
     // Fires on every selection transition: when this button becomes the
     // selection and when another button takes it over.
     changed selected => {
+        if root.selected { root.group-update-value(); }
         root.toggled();
+    }
+
+    changed text => {
+        if root.selected { root.group-update-value(); }
     }
 
     // Catch declarative initial state — `RadioButton { checked: true; }`
     // replaces the default binding, so pull the group's view in from `init`
     // and push the selection to the group if the user pre-selected.
     init => {
+        if root.selected { root.group-update-value(); }
         if root.checked && root.group-current-index != root.item-index {
             root.group-select();
         }
@@ -135,6 +144,21 @@ export component RadioGroupImplBase {
 
     public function select(index: int, label: string) {
         sel.select(index, label);
+    }
+
+    public function update-value(index: int, label: string) {
+        if index == root.current-index {
+            sel.update-value(label);
+        }
+    }
+
+    changed current-index => { root.clear-invalid-value(); }
+    changed item-count => { root.clear-invalid-value(); }
+
+    function clear-invalid-value() {
+        if root.current-index < 0 || root.current-index >= root.item-count {
+            sel.update-value("");
+        }
     }
 
     public function on-focus-change(gained: bool) {

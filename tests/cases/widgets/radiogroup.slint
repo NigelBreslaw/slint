@@ -12,6 +12,7 @@ export component TestCase inherits Window {
     in-out property <int> red-toggled-count: 0;
     in-out property <int> green-toggled-count: 0;
     out property <string> current-value: group.current-value;
+    in-out property <string> red-label: "Red";
     out property <bool> has-focus <=> group.has-focus;
     out property <bool> test: current-value == "" && selected-count == 0;
 
@@ -20,7 +21,7 @@ export component TestCase inherits Window {
         group := RadioGroup {
             title: "Colors";
             red-btn := RadioButton {
-                text: "Red";
+                text: root.red-label;
                 toggled => { root.red-toggled-count += 1; }
             }
             green-btn := RadioButton {
@@ -184,4 +185,33 @@ assert_eq!(instance.get_blue_checked(), false);
 
 ```
 
+```rust
+fn label_changes_update_value_without_selected_callback() {
+    let instance = TestCase::new().unwrap();
+    instance.invoke_set_red();
+    slint_testing::mock_elapsed_time(0);
+    assert_eq!(instance.get_current_value(), "Red");
+    assert!(instance.get_red_checked());
+    assert_eq!(instance.get_selected_count(), 1);
+
+    instance.set_red_label("Crimson".into());
+    slint_testing::mock_elapsed_time(0);
+    assert_eq!(instance.get_current_value(), "Crimson");
+    assert_eq!(instance.get_selected_count(), 1);
+
+    instance.invoke_set_green();
+    slint_testing::mock_elapsed_time(0);
+    assert_eq!(instance.get_current_value(), "Green");
+    assert!(instance.get_green_checked());
+    assert!(!instance.get_red_checked());
+
+    instance.set_red_label("Scarlet".into());
+    slint_testing::mock_elapsed_time(0);
+    assert_eq!(instance.get_current_value(), "Green");
+
+    assert_eq!(instance.get_selected_count(), 2);
+}
+
+label_changes_update_value_without_selected_callback();
+```
 */

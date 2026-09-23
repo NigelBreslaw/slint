@@ -205,6 +205,18 @@ fn wire_radio_button(
     };
     child.borrow_mut().set_binding(SmolStr::new_static("group-select"), select_call.into());
 
+    let update_value_call = Expression::FunctionCall {
+        function: Callable::Function(NamedReference::new(group, "update-value".into())),
+        arguments: vec![
+            Expression::PropertyReference(NamedReference::new(child, "item-index".into())),
+            Expression::PropertyReference(NamedReference::new(child, "text".into())),
+        ],
+        source_location: None,
+    };
+    child
+        .borrow_mut()
+        .set_binding(SmolStr::new_static("group-update-value"), update_value_call.into());
+
     let focus_call = Expression::FunctionCall {
         function: Callable::Function(NamedReference::new(group, "on-focus-change".into())),
         arguments: vec![Expression::FunctionParameterReference { index: 0, ty: Type::Bool }],
