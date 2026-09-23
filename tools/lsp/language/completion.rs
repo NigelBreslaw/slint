@@ -92,11 +92,11 @@ pub(crate) fn completion_at(
             )
             .map(|mut r| {
                 if node.kind() == SyntaxKind::ImportSpecifier && !token.text().contains('/') {
-                    let mut c =
-                        CompletionItem::new_simple("std-widgets.slint".into(), String::new());
-
-                    c.kind = Some(CompletionItemKind::FILE);
-                    r.push(c)
+                    for library in ["std-widgets.slint", "@controls"] {
+                        let mut c = CompletionItem::new_simple(library.into(), String::new());
+                        c.kind = Some(CompletionItemKind::FILE);
+                        r.push(c);
+                    }
                 }
                 r
             });
@@ -2256,6 +2256,18 @@ mod tests {
         "#;
         let res = get_completions(source).unwrap();
         res.iter().find(|ci| ci.label == "when").unwrap();
+    }
+
+    #[test]
+    fn controls_import_completion() {
+        let res = get_completions(r#"import { Button } from "🔺";"#).unwrap();
+        assert!(res.iter().any(|ci| ci.label == "@controls"));
+
+        let res = get_completions(r#"import {🔺} from "@controls";"#).unwrap();
+        for control in ["Button", "CheckBox", "RadioButton", "RadioGroup", "Slider", "Toggle"] {
+            assert!(res.iter().any(|ci| ci.label == control), "Missing {control}");
+        }
+        assert!(!res.iter().any(|ci| ci.label == "Pressable"));
     }
 
     #[test]
