@@ -1,0 +1,48 @@
+---
+title: Installation
+description: Add the Slint SC runtime to your Cargo project and install the Slint SC compiler and coverage tool.
+---
+
+Slint SC has three parts, and all three must be the same version:
+
+| Part | What it does | Where you get it |
+|---|---|---|
+| `slint-sc` | The runtime crate your application links. | [crates.io](https://crates.io/crates/slint-sc) |
+| `slint-compiler` | Compiles `.slint` files into Rust code. | [GitHub releases](https://github.com/slint-ui/slint/releases) |
+| `slint-sc-coverage` | Reports the coverage of your `.slint` code. | [GitHub releases](https://github.com/slint-ui/slint/releases) |
+
+## Add the Runtime
+
+Add `slint-sc` to the dependencies in your application's `Cargo.toml`:
+
+```toml
+[dependencies]
+slint-sc = "=1.19.0"
+```
+
+Pin the exact version with `=`.
+The generated code only compiles with the runtime of the version that generated it,
+so a newer runtime that Cargo picks on its own breaks the build ([`sls.gen.version`](/reference/generated-code/#sls.gen.version)).
+
+## Install the Compiler
+
+Download the `slint-compiler` archive for your host from the release whose version matches the `slint-sc` version in your `Cargo.toml`.
+
+Extract the archive and put `slint-compiler` in a directory on your `PATH`.
+Check that it runs, and that it prints the version you pinned:
+
+```sh
+slint-compiler --version
+```
+
+Use the binary from the release.
+It's the one that the qualification covers, so don't substitute a compiler you built yourself.
+
+## Install the Coverage Tool
+
+To measure coverage, download the `slint-sc-coverage` archive for your host from the same release.
+Extract it, put `slint-sc-coverage` on your `PATH`, and check it:
+
+```sh
+slint-sc-coverage --version
+```
