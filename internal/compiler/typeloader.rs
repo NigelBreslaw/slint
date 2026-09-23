@@ -1095,9 +1095,14 @@ impl TypeLoader {
             if import.file.starts_with("builtin:")
                 && !import.import_uri_token.source_file.path().starts_with("builtin:")
             {
+                let public_import = if import.file.starts_with("builtin:/controls/") {
+                    "@controls"
+                } else {
+                    "std-widgets.slint"
+                };
                 state.borrow_mut().diag.push_error(
                     format!(
-                        "Cannot import \"{}\": the files built into the compiler are internal. Import the widgets from \"std-widgets.slint\"",
+                        "Cannot import \"{}\": the files built into the compiler are internal. Import the widgets from \"{public_import}\"",
                         import.file
                     ),
                     &import.import_uri_token,
@@ -1761,6 +1766,15 @@ impl TypeLoader {
             .collect_tuple()
             .map(|(library, path)| (library, Some(path)))
             .unwrap_or((maybe_library_import, None));
+        if library == "controls" && !self.compiler_config.library_paths.contains_key(library) {
+            return file
+                .is_none()
+                .then(|| {
+                    crate::fileaccess::load_file(Path::new("builtin:/controls/controls.slint"))
+                })
+                .flatten()
+                .map(|file| (file.canon_path, file.builtin_contents));
+        }
         self.compiler_config.library_paths.get(library).and_then(|library_path| {
             let path = match file {
                 // "@library/file.slint" -> "/path/to/library/" + "file.slint"
@@ -2440,6 +2454,42 @@ fn test_unknown_style() {
     let diags = build_diagnostics.to_string_vec();
     assert_eq!(diags.len(), 1);
     assert!(diags[0].starts_with("Style FooBar is not known. Use one of the builtin styles ["));
+}
+
+#[test]
+fn test_builtin_controls_import() {
+    for style in ["fluent", "material", "cupertino", "cosmic"] {
+        let mut config = CompilerConfiguration::new(crate::generator::OutputFormat::Interpreter);
+        config.style = Some(style.into());
+        let mut diagnostics = BuildDiagnostics::default();
+        let loader = TypeLoader::new(config, &mut diagnostics);
+        assert!(!diagnostics.has_errors());
+        let (path, contents) = loader.find_file_in_library_path("controls").unwrap();
+        assert_eq!(path, Path::new("builtin:/controls/controls.slint"));
+        assert!(contents.is_some());
+        for private_path in [
+            "controls/primitives/pressable.slint",
+            "controls/components/button.slint",
+            "controls/../common/lineedit-base.slint",
+        ] {
+            assert!(loader.find_file_in_library_path(private_path).is_none());
+        }
+    }
+    assert!(!crate::fileaccess::styles().contains(&"controls"));
+}
+
+#[test]
+fn test_controls_library_override() {
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/typeloader/library/lib.slint");
+    let mut config = CompilerConfiguration::new(crate::generator::OutputFormat::Interpreter);
+    config.library_paths.insert("controls".into(), path.clone());
+    config.style = Some("fluent".into());
+    let mut diagnostics = BuildDiagnostics::default();
+    let loader = TypeLoader::new(config, &mut diagnostics);
+    let (resolved, contents) = loader.find_file_in_library_path("controls").unwrap();
+    assert_eq!(resolved, path);
+    assert!(contents.is_none());
+    assert!(!diagnostics.has_errors());
 }
 
 #[test]

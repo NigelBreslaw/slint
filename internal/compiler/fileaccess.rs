@@ -40,6 +40,21 @@ pub fn load_file(path: &std::path::Path) -> Option<VirtualFile> {
 }
 
 #[test]
+fn test_load_controls() {
+    let file = load_file(std::path::Path::new(
+        "builtin:/controls/components/../primitives/pressable.slint",
+    ))
+    .unwrap();
+    assert!(file.is_builtin());
+    assert_eq!(
+        file.canon_path,
+        std::path::Path::new("builtin:/controls/primitives/pressable.slint")
+    );
+    assert!(std::str::from_utf8(&file.read()).unwrap().contains("export component Pressable"));
+    assert!(load_file(std::path::Path::new("builtin:/controls/missing.slint")).is_none());
+}
+
+#[test]
 fn test_load_file() {
     let builtin = load_file(&std::path::PathBuf::from(
         "builtin:/foo/../common/./MadeWithSlint-logo-dark.svg",
@@ -142,24 +157,18 @@ mod builtin_library {
         {
             *f = std::ffi::OsStr::new(x);
         }
-        if let &[folder, file] = components.as_slice() {
-            let library = widget_library().iter().find(|x| x.0 == folder)?.1;
-            library.iter().find_map(|builtin_file| {
-                if builtin_file.path == file {
-                    Some(VirtualFile {
-                        canon_path: std::path::PathBuf::from(format!(
-                            "builtin:/{}/{}",
-                            folder.to_str().unwrap(),
-                            builtin_file.path
-                        )),
-                        builtin_contents: Some(builtin_file.contents),
-                    })
-                } else {
-                    None
-                }
+        let (file, folders) = components.split_last()?;
+        let folder =
+            folders.iter().map(|part| part.to_str()).collect::<Option<Vec<_>>>()?.join("/");
+        let library = widget_library().iter().find(|x| x.0 == folder)?.1;
+        library.iter().find_map(|builtin_file| {
+            (std::ffi::OsStr::new(builtin_file.path) == *file).then(|| VirtualFile {
+                canon_path: std::path::PathBuf::from(format!(
+                    "builtin:/{folder}/{}",
+                    builtin_file.path
+                )),
+                builtin_contents: Some(builtin_file.contents),
             })
-        } else {
-            None
-        }
+        })
     }
 }

@@ -1,0 +1,10 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
+
+import { Pressable } from "@controls";
+//                        >         <error{No exported type called 'Pressable' found in "@controls"}
+import { Pressable as Internal } from "@controls/primitives/pressable.slint";
+//                                    >                                    <error{Cannot find requested import "@controls/primitives/pressable.slint" in the library search path}
+import { Pressable as Embedded } from "builtin:/controls/primitives/pressable.slint";
+//                                    >                                            <error{Cannot import "builtin:/controls/primitives/pressable.slint": the files built into the compiler are internal. Import the widgets from "@controls"}
+export component Test inherits Window { }

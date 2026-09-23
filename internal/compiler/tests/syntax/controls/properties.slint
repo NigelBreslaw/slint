@@ -1,0 +1,49 @@
+// Copyright © SixtyFPS GmbH <info@slint.dev>
+// SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
+
+import { Button, CheckBox, RadioButton, Slider, Toggle } from "@controls";
+
+export component StyledButton inherits Button {
+    background: root.pressed ? blue : root.has-hover ? green : gray;
+    pressed: true;
+//  >     <error{Cannot assign to 'out' property 'pressed'}
+    Text { text: root.text; }
+}
+
+export component StyledSlider inherits Slider {
+    out property <length> leaked: root.handle-size;
+//                                     >         <error{The property 'handle-size' is private. Annotate it with 'in', 'out' or 'in-out' to make it accessible from other components}
+}
+
+export component Test inherits Window {
+    button := Button {
+        pressed: true;
+//      >     <error{Cannot assign to 'out' property 'pressed'}
+        has-hover: true;
+//      >       <error{Cannot assign to 'out' property 'has-hover'}
+        has-focus: true;
+//      >       <error{Cannot assign to 'out' property 'has-focus'}
+        text: "Public input";
+    }
+    CheckBox { checked: true; }
+    Toggle { checked: true; }
+    RadioButton { checked: true; }
+    slider := Slider {
+        value: 50;
+        handle-size: 12px;
+//      >         <error{Cannot assign to 'private' property 'handle-size'}
+        handle-pressed: true;
+//      >            <error{Cannot assign to 'out' property 'handle-pressed'}
+        vertical: true;
+//      >      <error{Cannot assign to 'out' property 'vertical'}
+    }
+    out property <bool> state: button.pressed;
+    out property <length> leaked: slider.handle-size;
+//                                       >         <error{The property 'handle-size' is private. Annotate it with 'in', 'out' or 'in-out' to make it accessible from other components}
+    out property <bool> internal-state: button.keyboard-pressed;
+//                                             >              <error{Element 'Button' does not have a property 'keyboard-pressed'}
+    out property <bool> internal-child: button.pressable.pressed;
+//                                             >       <error{Element 'Button' does not have a property 'pressable'}
+    public function overwrite-state() { button.pressed = true; }
+//                                      >                   <error{Assignment on an 'out' property}
+}

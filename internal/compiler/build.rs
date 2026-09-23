@@ -43,6 +43,16 @@ fn widget_library() -> &'static [(&'static str, &'static BuiltinDirectory<'stati
         )?;
     }
 
+    println!("cargo:rerun-if-changed=controls");
+    for directory in ["controls", "controls/components", "controls/primitives"] {
+        writeln!(
+            file,
+            "(\"{}\", &[{}]),",
+            directory,
+            process_style(&cargo_manifest_dir, &cargo_manifest_dir.join(directory))?
+        )?;
+    }
+
     writeln!(file, "]\n}}")?;
     file.flush()?;
 
