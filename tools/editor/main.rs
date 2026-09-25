@@ -880,11 +880,13 @@ mod tests {
             .unwrap();
 
         assert_eq!(project_root, expected_root);
+        let expected_project_url =
+            Url::from_directory_path(std::fs::canonicalize(&project_root).unwrap()).unwrap();
         assert!(session.document_cache.get_document(&old_url).is_none());
         assert!(session.document_cache.get_document(&expected_component.url).is_some());
         assert!(messages[PRIMARY_PREVIEW_INDEX].borrow().iter().any(|message| {
             matches!(message, LspToPreviewMessage::OpenProject { root }
-                if root.to_file_path().as_deref() == Ok(project_root.as_path()))
+                if root == &expected_project_url)
         }));
         assert!(messages[PRIMARY_PREVIEW_INDEX].borrow().iter().any(|message| {
             matches!(message, LspToPreviewMessage::ShowPreview(component)
