@@ -25,9 +25,9 @@ jobs:
         include:
           - profile: debug
             binary_dir: debug
-          - profile: debug-opt1
-            binary_dir: debug
           - profile: release
+            binary_dir: release
+          - profile: release-opt1
             binary_dir: release
     runs-on: macos-14
     timeout-minutes: 120
@@ -74,10 +74,10 @@ jobs:
         run: |
           start=$(date +%s)
           set +e
-          if [ "$BUILD_PROFILE" = release ]; then
+          if [ "$BUILD_PROFILE" = release-opt1 ]; then
+            CARGO_PROFILE_RELEASE_OPT_LEVEL=1 cargo build --locked -p slint-editor --all-features --features slint/mcp --release --timings
+          elif [ "$BUILD_PROFILE" = release ]; then
             cargo build --locked -p slint-editor --all-features --features slint/mcp --release --timings
-          elif [ "$BUILD_PROFILE" = debug-opt1 ]; then
-            CARGO_PROFILE_DEV_OPT_LEVEL=1 cargo build --locked -p slint-editor --all-features --features slint/mcp --timings
           else
             cargo build --locked -p slint-editor --all-features --features slint/mcp --timings
           fi
