@@ -22,6 +22,7 @@ env:
 
 jobs:
     format_fix:
+        if: github.repository != 'NigelBreslaw/slint' || github.head_ref != 'nigel/editor-ui-ci-profile-benchmark'
         runs-on: ubuntu-latest
         timeout-minutes: 5
         permissions:
@@ -54,6 +55,7 @@ jobs:
               uses: autofix-ci/action@c5b2d67aa2274e7b5a18224e8171550871fc7e4a
 
     lint_typecheck:
+        if: github.repository != 'NigelBreslaw/slint' || github.head_ref != 'nigel/editor-ui-ci-profile-benchmark'
         runs-on: ubuntu-latest
         timeout-minutes: 5
         steps:
@@ -72,6 +74,7 @@ jobs:
                 incremental_files_only: true
 
     ci:
+        if: github.repository != 'NigelBreslaw/slint' || github.head_ref != 'nigel/editor-ui-ci-profile-benchmark'
         needs: [format_fix, lint_typecheck]
         permissions:
             contents: read
@@ -91,8 +94,9 @@ jobs:
             SLINT_TESTING_TOKEN: ${{ secrets.SLINT_TESTING_TOKEN }}
 
     done:
-        # Note: We use `needs` + `if: always()` here to ensure the "done"
-        # task is never just "skipped", which would count as success().
+        if: always() && (github.repository != 'NigelBreslaw/slint' || github.head_ref != 'nigel/editor-ui-ci-profile-benchmark')
+        # Normal CI uses `needs` + `if: always()` so the "done" task
+        # does not count as a pass when another job fails or is cancelled.
         # Instead, make the task fail if any job did not succeed. A cancelled
         # job (e.g. a GitHub-side abort) must fail the gate too: it is not a
         # passing result, so treating it as success would let a change land

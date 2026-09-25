@@ -1,0 +1,122 @@
+# Copyright © SixtyFPS GmbH <info@slint.dev>
+# SPDX-License-Identifier: GPL-3.0-only OR LicenseRef-Slint-Royalty-free-2.0 OR LicenseRef-Slint-Software-3.0
+
+name: Visual Editor UI profile timing
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - .github/workflows/visual_editor_ui_profile_timing.yaml
+
+permissions:
+  contents: read
+
+jobs:
+  ui:
+    if: >-
+      github.repository == 'NigelBreslaw/slint' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'nigel/editor-ui-ci-profile-benchmark'
+    name: UI tests (${{ matrix.profile }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: debug
+            binary_dir: debug
+          - profile: release
+            binary_dir: release
+          - profile: release-opt1
+            binary_dir: release
+    runs-on: macos-14
+    timeout-minutes: 120
+    env:
+      RUSTFLAGS: -D warnings
+      SLINT_EMIT_DEBUG_INFO: '1'
+      CARGO_INCREMENTAL: false
+      CARGO_PROFILE_DEV_DEBUG: 0
+    steps:
+      - name: Record job start
+        run: echo "EXPERIMENT_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/install-skia-dependencies
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache: 'false'
+      - uses: Swatinem/rust-cache@v2
+        id: cargo_cache
+        with:
+          key: x-visual-editor-ui-profile-${{ matrix.profile }}
+          save-if: 'true'
+          cache-on-failure: 'true'
+          cache-bin: 'false'
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - uses: astral-sh/setup-uv@v7
+      - name: Install UI test dependencies
+        working-directory: tools/editor/ui-tests
+        env:
+          UV_INDEX: slint-private=https://testing.slint.dev/simple/
+          UV_INDEX_SLINT_PRIVATE_USERNAME: __token__
+          UV_INDEX_SLINT_PRIVATE_PASSWORD: ${{ secrets.SLINT_TESTING_TOKEN }}
+        run: |
+          if [ -z "$UV_INDEX_SLINT_PRIVATE_PASSWORD" ]; then
+            echo "::error::SLINT_TESTING_TOKEN is required to install the private UI test package"
+            exit 1
+          fi
+          uv sync --locked
+      - name: Build editor (${{ matrix.profile }})
+        id: build
+        env:
+          BUILD_PROFILE: ${{ matrix.profile }}
+        run: |
+          start=$(date +%s)
+          set +e
+          if [ "$BUILD_PROFILE" = release-opt1 ]; then
+            CARGO_PROFILE_RELEASE_OPT_LEVEL=1 cargo build --locked -p slint-editor --all-features --features slint/mcp --release --timings
+          elif [ "$BUILD_PROFILE" = release ]; then
+            cargo build --locked -p slint-editor --all-features --features slint/mcp --release --timings
+          else
+            cargo build --locked -p slint-editor --all-features --features slint/mcp --timings
+          fi
+          status=$?
+          echo "seconds=$(( $(date +%s) - start ))" >> "$GITHUB_OUTPUT"
+          exit "$status"
+      - name: Run full headless UI suite (3 workers)
+        id: ui_tests
+        working-directory: tools/editor/ui-tests
+        env:
+          SLINT_BACKEND: headless-skia
+          SLINT_EDITOR_UI_TEST_BACKEND: headless-skia
+          SLINT_EDITOR_BINARY: ${{ github.workspace }}/target/${{ matrix.binary_dir }}/slint-editor
+        run: |
+          start=$(date +%s)
+          set +e
+          .venv/bin/pytest -ra -n 3 --dist=worksteal
+          status=$?
+          echo "seconds=$(( $(date +%s) - start ))" >> "$GITHUB_OUTPUT"
+          exit "$status"
+      - name: Report elapsed time
+        if: always()
+        env:
+          BUILD_SECONDS: ${{ steps.build.outputs.seconds }}
+          TEST_SECONDS: ${{ steps.ui_tests.outputs.seconds }}
+          CACHE_HIT: ${{ steps.cargo_cache.outputs.cache-hit }}
+          TEST_OUTCOME: ${{ steps.ui_tests.outcome }}
+          PROFILE: ${{ matrix.profile }}
+        run: |
+          total=$(( $(date +%s) - EXPERIMENT_STARTED_AT ))
+          {
+            echo "### $PROFILE editor, macOS UI suite"
+            echo "Runner: $(uname -m); cache exact hit: ${CACHE_HIT:-unknown}; build: ${BUILD_SECONDS:-not completed} s; tests: ${TEST_SECONDS:-not completed} s; test outcome: $TEST_OUTCOME; elapsed since first step: $total s."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload Cargo timing reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-editor-ui-${{ matrix.profile }}-cargo-timings
+          path: target/cargo-timings/
+          if-no-files-found: warn
+          retention-days: 7
