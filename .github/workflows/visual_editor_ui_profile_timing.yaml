@@ -25,6 +25,8 @@ jobs:
         include:
           - profile: debug
             binary_dir: debug
+          - profile: debug-opt1
+            binary_dir: debug
           - profile: release
             binary_dir: release
     runs-on: macos-14
@@ -41,8 +43,14 @@ jobs:
       - uses: ./.github/actions/install-skia-dependencies
       - uses: ./.github/actions/setup-rust
         with:
-          key: x-visual-editor-v1-ui
-          save_if: 'false'
+          cache: 'false'
+      - uses: Swatinem/rust-cache@v2
+        id: cargo_cache
+        with:
+          key: x-visual-editor-ui-profile-${{ matrix.profile }}
+          save-if: 'true'
+          cache-on-failure: 'true'
+          cache-bin: 'false'
       - uses: actions/setup-python@v7
         with:
           python-version: '3.11'
@@ -68,6 +76,8 @@ jobs:
           set +e
           if [ "$BUILD_PROFILE" = release ]; then
             cargo build --locked -p slint-editor --all-features --features slint/mcp --release --timings
+          elif [ "$BUILD_PROFILE" = debug-opt1 ]; then
+            CARGO_PROFILE_DEV_OPT_LEVEL=1 cargo build --locked -p slint-editor --all-features --features slint/mcp --timings
           else
             cargo build --locked -p slint-editor --all-features --features slint/mcp --timings
           fi
@@ -93,12 +103,14 @@ jobs:
         env:
           BUILD_SECONDS: ${{ steps.build.outputs.seconds }}
           TEST_SECONDS: ${{ steps.ui_tests.outputs.seconds }}
+          CACHE_HIT: ${{ steps.cargo_cache.outputs.cache-hit }}
+          TEST_OUTCOME: ${{ steps.ui_tests.outcome }}
           PROFILE: ${{ matrix.profile }}
         run: |
           total=$(( $(date +%s) - EXPERIMENT_STARTED_AT ))
           {
             echo "### $PROFILE editor, macOS UI suite"
-            echo "Runner: $(uname -m); build: ${BUILD_SECONDS:-not completed} s; tests: ${TEST_SECONDS:-not completed} s; elapsed since first step: $total s."
+            echo "Runner: $(uname -m); cache exact hit: ${CACHE_HIT:-unknown}; build: ${BUILD_SECONDS:-not completed} s; tests: ${TEST_SECONDS:-not completed} s; test outcome: $TEST_OUTCOME; elapsed since first step: $total s."
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Cargo timing reports
         if: always()
